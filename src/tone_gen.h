@@ -38,6 +38,7 @@ struct ToneData_t {
     uint8_t bpm;
     LightColor lightColor;
     bool ledState;
+    uint16_t lightStep;
     FuriTimer* lightTimer;
 };
 

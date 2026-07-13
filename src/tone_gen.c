@@ -148,6 +148,7 @@ int32_t tone_gen_app(void* p) {
         ((struct ToneData_t*)appContext->additionalData)->bpm = 80;
         ((struct ToneData_t*)appContext->additionalData)->lightColor = LIGHT_COLOR_ALL;
         ((struct ToneData_t*)appContext->additionalData)->ledState = false;
+        ((struct ToneData_t*)appContext->additionalData)->lightStep = 0;
         ((struct ToneData_t*)appContext->additionalData)->lightTimer = NULL;
 
         result = setupViews(&appContext);
