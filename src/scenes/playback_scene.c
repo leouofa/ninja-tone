@@ -74,6 +74,44 @@ static void playback_light_timer_callback(void* context) {
     toneDataModel->ledState = brightness > 0;
 }
 
+static ToneWaveType playback_next_wave_type(ToneWaveType waveType) {
+    switch(waveType) {
+    case SINE:
+        return SQUARE;
+    case SQUARE:
+    default:
+        return SINE;
+    }
+}
+
+static LightColor playback_next_light_color(LightColor lightColor) {
+    switch(lightColor) {
+    case LIGHT_COLOR_RED:
+        return LIGHT_COLOR_GREEN;
+    case LIGHT_COLOR_GREEN:
+        return LIGHT_COLOR_BLUE;
+    case LIGHT_COLOR_BLUE:
+        return LIGHT_COLOR_ALL;
+    case LIGHT_COLOR_ALL:
+    default:
+        return LIGHT_COLOR_RED;
+    }
+}
+
+static LightColor playback_previous_light_color(LightColor lightColor) {
+    switch(lightColor) {
+    case LIGHT_COLOR_RED:
+        return LIGHT_COLOR_ALL;
+    case LIGHT_COLOR_GREEN:
+        return LIGHT_COLOR_RED;
+    case LIGHT_COLOR_BLUE:
+        return LIGHT_COLOR_GREEN;
+    case LIGHT_COLOR_ALL:
+    default:
+        return LIGHT_COLOR_BLUE;
+    }
+}
+
 // Renders the waveform
 static void playback_view_draw_callback(Canvas* canvas, void* model) {
     UNUSED(model);
@@ -108,6 +146,44 @@ static void playback_view_draw_callback(Canvas* canvas, void* model) {
     }
 }
 
+static bool playback_view_input_callback(InputEvent* event, void* context) {
+    if(event->type != InputTypeShort) {
+        return false;
+    }
+
+    struct AppContext_t* app = (struct AppContext_t*)context;
+    struct View_t* playbackView = app->activeViews[ToneGenAppView_PlaybackView];
+    struct ToneData_t* appToneData = (struct ToneData_t*)app->additionalData;
+    struct ToneData_t* toneDataModel = (struct ToneData_t*)view_get_model(playbackView->viewData);
+
+    switch(event->key) {
+    case InputKeyOk: {
+        ToneWaveType nextWaveType = playback_next_wave_type(appToneData->waveType);
+        appToneData->waveType = nextWaveType;
+        toneDataModel->waveType = nextWaveType;
+        toneDataModel->animationOffset = 0;
+        toneDataModel->lightStep = 0;
+        break;
+    }
+    case InputKeyLeft:
+        appToneData->lightColor = playback_previous_light_color(appToneData->lightColor);
+        toneDataModel->lightColor = appToneData->lightColor;
+        playback_set_light_color(toneDataModel->lightColor, playback_light_brightness(toneDataModel));
+        break;
+    case InputKeyRight:
+        appToneData->lightColor = playback_next_light_color(appToneData->lightColor);
+        toneDataModel->lightColor = appToneData->lightColor;
+        playback_set_light_color(toneDataModel->lightColor, playback_light_brightness(toneDataModel));
+        break;
+    default:
+        return false;
+    }
+
+    view_commit_model(playbackView->viewData, true);
+
+    return true;
+}
+
 // Sets up the waveform to be displayed
 void scene_on_enter_playback_scene(void* context) {
     FURI_LOG_I(TAG, "scene_on_enter_playback_scene");
@@ -116,6 +192,7 @@ void scene_on_enter_playback_scene(void* context) {
 
     // Configure the custom view
     view_set_draw_callback(playbackView->viewData, playback_view_draw_callback);
+    view_set_input_callback(playbackView->viewData, playback_view_input_callback);
     view_set_context(playbackView->viewData, context);
 
     FURI_LOG_I(TAG, "setting view model");
