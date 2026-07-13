@@ -11,6 +11,10 @@
 #define SQUARE_WAVE(x, toneModelData) \
     ((sin((x + toneDataModel->animationOffset) * 50) > 0 ? 1 : -1) * 20 + (64 / 2))
 
+#define LIGHT_UPDATE_INTERVAL_MS 20
+#define LIGHT_MAX_BRIGHTNESS 255
+#define LIGHT_TWO_PI 6.28318530718f
+
 static void playback_set_light_color(LightColor lightColor, uint8_t value) {
     furi_hal_light_set(LightRed, 0);
     furi_hal_light_set(LightGreen, 0);
@@ -35,13 +39,39 @@ static void playback_set_light_color(LightColor lightColor, uint8_t value) {
 }
 
 static uint32_t playback_blink_interval_ticks(uint8_t bpm) {
-    return furi_ms_to_ticks(60 * 1000 / (bpm * 2));
+    UNUSED(bpm);
+    return furi_ms_to_ticks(LIGHT_UPDATE_INTERVAL_MS);
+}
+
+static uint16_t playback_light_steps_per_beat(uint8_t bpm) {
+    uint16_t beatMs = 60 * 1000 / bpm;
+    uint16_t steps = beatMs / LIGHT_UPDATE_INTERVAL_MS;
+    return steps > 0 ? steps : 1;
+}
+
+static uint8_t playback_light_brightness(struct ToneData_t* toneDataModel) {
+    uint16_t stepsPerBeat = playback_light_steps_per_beat(toneDataModel->bpm);
+    uint16_t step = toneDataModel->lightStep % stepsPerBeat;
+
+    switch(toneDataModel->waveType) {
+    case SINE: {
+        float phase = ((float)step / (float)stepsPerBeat) * LIGHT_TWO_PI;
+        return (uint8_t)((sinf(phase) + 1.0f) * 0.5f * LIGHT_MAX_BRIGHTNESS);
+    }
+    case SQUARE:
+        return step < (stepsPerBeat / 2) ? LIGHT_MAX_BRIGHTNESS : 0;
+    default:
+        return 0;
+    }
 }
 
 static void playback_light_timer_callback(void* context) {
     struct ToneData_t* toneDataModel = context;
-    toneDataModel->ledState = !toneDataModel->ledState;
-    playback_set_light_color(toneDataModel->lightColor, toneDataModel->ledState ? 255 : 0);
+    uint16_t stepsPerBeat = playback_light_steps_per_beat(toneDataModel->bpm);
+    uint8_t brightness = playback_light_brightness(toneDataModel);
+    playback_set_light_color(toneDataModel->lightColor, brightness);
+    toneDataModel->lightStep = (toneDataModel->lightStep + 1) % stepsPerBeat;
+    toneDataModel->ledState = brightness > 0;
 }
 
 // Renders the waveform
@@ -96,6 +126,7 @@ void scene_on_enter_playback_scene(void* context) {
     toneDataModel->bpm = ((struct ToneData_t*)app->additionalData)->bpm;
     toneDataModel->lightColor = ((struct ToneData_t*)app->additionalData)->lightColor;
     toneDataModel->ledState = false;
+    toneDataModel->lightStep = 0;
     toneDataModel->lightTimer =
         furi_timer_alloc(playback_light_timer_callback, FuriTimerTypePeriodic, toneDataModel);
     furi_timer_start(toneDataModel->lightTimer, playback_blink_interval_ticks(toneDataModel->bpm));
@@ -132,6 +163,7 @@ void scene_on_exit_playback_scene(void* context) {
         toneDataModel->lightTimer = NULL;
     }
     toneDataModel->ledState = false;
+    toneDataModel->lightStep = 0;
     playback_set_light_color(toneDataModel->lightColor, 0);
 
     stopSound();
