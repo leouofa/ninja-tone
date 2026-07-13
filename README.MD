@@ -1,4 +1,4 @@
-# Tone Generator
+# Tone Ninja
 
 This repo contains a simple application for the Flipper Zero that can generate a steady tone with a variety of user chosen settings. It's designed to be a simple application showcasing how to develop apps for the Flipper Zero, and get my hands dirty with doing so. It is written entirely in C, and is very simple in nature by design.
 

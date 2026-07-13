@@ -7,12 +7,14 @@
 #include "../utils/linked_list.h"
 
 // Icons to include
-#include "tone_gen_icons.h"
+#include "tone_ninja_icons.h"
 
 /** indices for menu items */
 typedef enum {
     ToneGenAppMenuSelection_Play,
-    ToneGenAppMenuSelection_Adjust
+    ToneGenAppMenuSelection_Adjust,
+    ToneGenAppMenuSelection_LightSettings,
+    ToneGenAppMenuSelection_Instructions
 } ToneGenAppMenuSelection;
 
 /** main menu callback - sends a custom event to the scene manager based on the menu selection */
@@ -26,6 +28,14 @@ void menu_callback_starting_scene(void* context, uint32_t index) {
         break;
     case ToneGenAppMenuSelection_Adjust:
         scene_manager_handle_custom_event(app->scene_manager, ToneGenAppMenuSelection_Adjust);
+        break;
+    case ToneGenAppMenuSelection_LightSettings:
+        scene_manager_handle_custom_event(
+            app->scene_manager, ToneGenAppMenuSelection_LightSettings);
+        break;
+    case ToneGenAppMenuSelection_Instructions:
+        scene_manager_handle_custom_event(
+            app->scene_manager, ToneGenAppMenuSelection_Instructions);
         break;
     }
 }
@@ -45,16 +55,30 @@ void scene_on_enter_starting_scene(void* context) {
     // * these icons do not have a framerate (resulting in a division by zero)
     menu_add_item(
         menuView->viewData,
-        "Play Tone",
+        "Play",
         &A_play_button,
         ToneGenAppMenuSelection_Play,
         menu_callback_starting_scene,
         app);
     menu_add_item(
         menuView->viewData,
-        "Adjust Tone",
+        "Tone Settings",
         &A_settings_button,
         ToneGenAppMenuSelection_Adjust,
+        menu_callback_starting_scene,
+        app);
+    menu_add_item(
+        menuView->viewData,
+        "Light Settings",
+        &A_settings_button,
+        ToneGenAppMenuSelection_LightSettings,
+        menu_callback_starting_scene,
+        app);
+    menu_add_item(
+        menuView->viewData,
+        "Instructions",
+        &A_settings_button,
+        ToneGenAppMenuSelection_Instructions,
         menu_callback_starting_scene,
         app);
     view_dispatcher_switch_to_view(app->view_dispatcher, ToneGenAppView_SharedMenu);
@@ -75,6 +99,14 @@ bool scene_on_event_starting_scene(void* context, SceneManagerEvent event) {
             break;
         case ToneGenAppMenuSelection_Adjust:
             scene_manager_next_scene(app->scene_manager, ToneGenAppScene_Settings);
+            consumed = true;
+            break;
+        case ToneGenAppMenuSelection_LightSettings:
+            scene_manager_next_scene(app->scene_manager, ToneGenAppScene_LightSettings);
+            consumed = true;
+            break;
+        case ToneGenAppMenuSelection_Instructions:
+            scene_manager_next_scene(app->scene_manager, ToneGenAppScene_Instructions);
             consumed = true;
             break;
         }
