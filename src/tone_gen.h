@@ -11,6 +11,8 @@ typedef enum {
     ToneGenAppScene_Starting,
     ToneGenAppScene_Playback,
     ToneGenAppScene_Settings,
+    ToneGenAppScene_LightSettings,
+    ToneGenAppScene_Instructions,
     ToneGenAppScene_count
 } ToneGenAppScene;
 
@@ -20,6 +22,7 @@ typedef enum {
     ToneGenAppView_Submenu,
     ToneGenAppView_VariableItemList,
     ToneGenAppView_PlaybackView,
+    ToneGenAppView_BlankView,
     ToneGenAppView_Popup,
     ToneGenAppView_count
 } ToneGenAppView;
