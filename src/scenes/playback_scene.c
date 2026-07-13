@@ -14,6 +14,9 @@
 #define LIGHT_UPDATE_INTERVAL_MS 20
 #define LIGHT_MAX_BRIGHTNESS 255
 #define LIGHT_TWO_PI 6.28318530718f
+#define MIN_FREQ 100
+#define MAX_FREQ 2500
+#define FREQ_STEPS 10
 
 static void playback_set_light_color(LightColor lightColor, uint8_t value) {
     furi_hal_light_set(LightRed, 0);
@@ -86,30 +89,46 @@ static ToneWaveType playback_next_wave_type(ToneWaveType waveType) {
 
 static LightColor playback_next_light_color(LightColor lightColor) {
     switch(lightColor) {
-    case LIGHT_COLOR_RED:
+    case LIGHT_COLOR_ALL:
         return LIGHT_COLOR_GREEN;
+    case LIGHT_COLOR_BLUE:
+        return LIGHT_COLOR_RED;
     case LIGHT_COLOR_GREEN:
         return LIGHT_COLOR_BLUE;
-    case LIGHT_COLOR_BLUE:
-        return LIGHT_COLOR_ALL;
-    case LIGHT_COLOR_ALL:
+    case LIGHT_COLOR_RED:
     default:
-        return LIGHT_COLOR_RED;
+        return LIGHT_COLOR_ALL;
     }
 }
 
 static LightColor playback_previous_light_color(LightColor lightColor) {
     switch(lightColor) {
-    case LIGHT_COLOR_RED:
-        return LIGHT_COLOR_ALL;
-    case LIGHT_COLOR_GREEN:
+    case LIGHT_COLOR_ALL:
         return LIGHT_COLOR_RED;
     case LIGHT_COLOR_BLUE:
         return LIGHT_COLOR_GREEN;
-    case LIGHT_COLOR_ALL:
+    case LIGHT_COLOR_GREEN:
+        return LIGHT_COLOR_ALL;
+    case LIGHT_COLOR_RED:
     default:
         return LIGHT_COLOR_BLUE;
     }
+}
+
+static uint16_t playback_next_frequency(uint16_t frequency) {
+    if(frequency >= MAX_FREQ) {
+        return MIN_FREQ;
+    }
+
+    return frequency + FREQ_STEPS;
+}
+
+static uint16_t playback_previous_frequency(uint16_t frequency) {
+    if(frequency <= MIN_FREQ) {
+        return MAX_FREQ;
+    }
+
+    return frequency - FREQ_STEPS;
 }
 
 // Renders the waveform
@@ -174,6 +193,16 @@ static bool playback_view_input_callback(InputEvent* event, void* context) {
         appToneData->lightColor = playback_next_light_color(appToneData->lightColor);
         toneDataModel->lightColor = appToneData->lightColor;
         playback_set_light_color(toneDataModel->lightColor, playback_light_brightness(toneDataModel));
+        break;
+    case InputKeyUp:
+        appToneData->frequency = playback_next_frequency(appToneData->frequency);
+        toneDataModel->frequency = appToneData->frequency;
+        startSound(toneDataModel);
+        break;
+    case InputKeyDown:
+        appToneData->frequency = playback_previous_frequency(appToneData->frequency);
+        toneDataModel->frequency = appToneData->frequency;
+        startSound(toneDataModel);
         break;
     default:
         return false;
