@@ -21,6 +21,7 @@ typedef enum {
     ToneGenAppView_SharedMenu,
     ToneGenAppView_Submenu,
     ToneGenAppView_VariableItemList,
+    ToneGenAppView_NumberInput,
     ToneGenAppView_PlaybackView,
     ToneGenAppView_BlankView,
     ToneGenAppView_Popup,
@@ -28,12 +29,17 @@ typedef enum {
 } ToneGenAppView;
 
 typedef enum { SINE, SQUARE } ToneWaveType;
+typedef enum { LIGHT_COLOR_RED, LIGHT_COLOR_GREEN, LIGHT_COLOR_BLUE, LIGHT_COLOR_ALL } LightColor;
 
 struct ToneData_t {
     int animationOffset;
     ToneWaveType waveType;
     uint16_t frequency;
     float volume;
+    uint8_t bpm;
+    LightColor lightColor;
+    bool ledState;
+    FuriTimer* lightTimer;
 };
 
 #endif

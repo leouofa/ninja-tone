@@ -11,6 +11,39 @@
 #define SQUARE_WAVE(x, toneModelData) \
     ((sin((x + toneDataModel->animationOffset) * 50) > 0 ? 1 : -1) * 20 + (64 / 2))
 
+static void playback_set_light_color(LightColor lightColor, uint8_t value) {
+    furi_hal_light_set(LightRed, 0);
+    furi_hal_light_set(LightGreen, 0);
+    furi_hal_light_set(LightBlue, 0);
+
+    switch(lightColor) {
+    case LIGHT_COLOR_RED:
+        furi_hal_light_set(LightRed, value);
+        break;
+    case LIGHT_COLOR_GREEN:
+        furi_hal_light_set(LightGreen, value);
+        break;
+    case LIGHT_COLOR_BLUE:
+        furi_hal_light_set(LightBlue, value);
+        break;
+    case LIGHT_COLOR_ALL:
+        furi_hal_light_set(LightRed, value);
+        furi_hal_light_set(LightGreen, value);
+        furi_hal_light_set(LightBlue, value);
+        break;
+    }
+}
+
+static uint32_t playback_blink_interval_ticks(uint8_t bpm) {
+    return furi_ms_to_ticks(60 * 1000 / (bpm * 2));
+}
+
+static void playback_light_timer_callback(void* context) {
+    struct ToneData_t* toneDataModel = context;
+    toneDataModel->ledState = !toneDataModel->ledState;
+    playback_set_light_color(toneDataModel->lightColor, toneDataModel->ledState ? 255 : 0);
+}
+
 // Renders the waveform
 static void playback_view_draw_callback(Canvas* canvas, void* model) {
     UNUSED(model);
@@ -60,6 +93,13 @@ void scene_on_enter_playback_scene(void* context) {
     toneDataModel->waveType = ((struct ToneData_t*)app->additionalData)->waveType;
     toneDataModel->frequency = ((struct ToneData_t*)app->additionalData)->frequency;
     toneDataModel->volume = ((struct ToneData_t*)app->additionalData)->volume;
+    toneDataModel->bpm = ((struct ToneData_t*)app->additionalData)->bpm;
+    toneDataModel->lightColor = ((struct ToneData_t*)app->additionalData)->lightColor;
+    toneDataModel->ledState = false;
+    toneDataModel->lightTimer =
+        furi_timer_alloc(playback_light_timer_callback, FuriTimerTypePeriodic, toneDataModel);
+    furi_timer_start(toneDataModel->lightTimer, playback_blink_interval_ticks(toneDataModel->bpm));
+    playback_light_timer_callback(toneDataModel);
 
     // Set the currently active view
     FURI_LOG_I(TAG, "setting active view");
@@ -82,7 +122,18 @@ bool scene_on_event_playback_scene(void* context, SceneManagerEvent event) {
 // Not actively used in this instance.
 void scene_on_exit_playback_scene(void* context) {
     FURI_LOG_I(TAG, "scene_on_exit_playback_scene");
-    UNUSED(context);
+    struct AppContext_t* app = (struct AppContext_t*)context;
+    struct View_t* playbackView = app->activeViews[ToneGenAppView_PlaybackView];
+    struct ToneData_t* toneDataModel = (struct ToneData_t*)view_get_model(playbackView->viewData);
+
+    if(toneDataModel->lightTimer != NULL) {
+        furi_timer_stop(toneDataModel->lightTimer);
+        furi_timer_free(toneDataModel->lightTimer);
+        toneDataModel->lightTimer = NULL;
+    }
+    toneDataModel->ledState = false;
+    playback_set_light_color(toneDataModel->lightColor, 0);
+
     stopSound();
     deinitializeSpeaker();
 }
