@@ -14,6 +14,9 @@
 #define LIGHT_UPDATE_INTERVAL_MS 20
 #define LIGHT_MAX_BRIGHTNESS 255
 #define LIGHT_TWO_PI 6.28318530718f
+#define MIN_FREQ 100
+#define MAX_FREQ 2500
+#define FREQ_STEPS 10
 
 static void playback_set_light_color(LightColor lightColor, uint8_t value) {
     furi_hal_light_set(LightRed, 0);
@@ -74,6 +77,60 @@ static void playback_light_timer_callback(void* context) {
     toneDataModel->ledState = brightness > 0;
 }
 
+static ToneWaveType playback_next_wave_type(ToneWaveType waveType) {
+    switch(waveType) {
+    case SINE:
+        return SQUARE;
+    case SQUARE:
+    default:
+        return SINE;
+    }
+}
+
+static LightColor playback_next_light_color(LightColor lightColor) {
+    switch(lightColor) {
+    case LIGHT_COLOR_ALL:
+        return LIGHT_COLOR_GREEN;
+    case LIGHT_COLOR_BLUE:
+        return LIGHT_COLOR_RED;
+    case LIGHT_COLOR_GREEN:
+        return LIGHT_COLOR_BLUE;
+    case LIGHT_COLOR_RED:
+    default:
+        return LIGHT_COLOR_ALL;
+    }
+}
+
+static LightColor playback_previous_light_color(LightColor lightColor) {
+    switch(lightColor) {
+    case LIGHT_COLOR_ALL:
+        return LIGHT_COLOR_RED;
+    case LIGHT_COLOR_BLUE:
+        return LIGHT_COLOR_GREEN;
+    case LIGHT_COLOR_GREEN:
+        return LIGHT_COLOR_ALL;
+    case LIGHT_COLOR_RED:
+    default:
+        return LIGHT_COLOR_BLUE;
+    }
+}
+
+static uint16_t playback_next_frequency(uint16_t frequency) {
+    if(frequency >= MAX_FREQ) {
+        return MIN_FREQ;
+    }
+
+    return frequency + FREQ_STEPS;
+}
+
+static uint16_t playback_previous_frequency(uint16_t frequency) {
+    if(frequency <= MIN_FREQ) {
+        return MAX_FREQ;
+    }
+
+    return frequency - FREQ_STEPS;
+}
+
 // Renders the waveform
 static void playback_view_draw_callback(Canvas* canvas, void* model) {
     UNUSED(model);
@@ -108,6 +165,54 @@ static void playback_view_draw_callback(Canvas* canvas, void* model) {
     }
 }
 
+static bool playback_view_input_callback(InputEvent* event, void* context) {
+    if(event->type != InputTypeShort) {
+        return false;
+    }
+
+    struct AppContext_t* app = (struct AppContext_t*)context;
+    struct View_t* playbackView = app->activeViews[ToneGenAppView_PlaybackView];
+    struct ToneData_t* appToneData = (struct ToneData_t*)app->additionalData;
+    struct ToneData_t* toneDataModel = (struct ToneData_t*)view_get_model(playbackView->viewData);
+
+    switch(event->key) {
+    case InputKeyOk: {
+        ToneWaveType nextWaveType = playback_next_wave_type(appToneData->waveType);
+        appToneData->waveType = nextWaveType;
+        toneDataModel->waveType = nextWaveType;
+        toneDataModel->animationOffset = 0;
+        toneDataModel->lightStep = 0;
+        break;
+    }
+    case InputKeyLeft:
+        appToneData->lightColor = playback_previous_light_color(appToneData->lightColor);
+        toneDataModel->lightColor = appToneData->lightColor;
+        playback_set_light_color(toneDataModel->lightColor, playback_light_brightness(toneDataModel));
+        break;
+    case InputKeyRight:
+        appToneData->lightColor = playback_next_light_color(appToneData->lightColor);
+        toneDataModel->lightColor = appToneData->lightColor;
+        playback_set_light_color(toneDataModel->lightColor, playback_light_brightness(toneDataModel));
+        break;
+    case InputKeyUp:
+        appToneData->frequency = playback_next_frequency(appToneData->frequency);
+        toneDataModel->frequency = appToneData->frequency;
+        startSound(toneDataModel);
+        break;
+    case InputKeyDown:
+        appToneData->frequency = playback_previous_frequency(appToneData->frequency);
+        toneDataModel->frequency = appToneData->frequency;
+        startSound(toneDataModel);
+        break;
+    default:
+        return false;
+    }
+
+    view_commit_model(playbackView->viewData, true);
+
+    return true;
+}
+
 // Sets up the waveform to be displayed
 void scene_on_enter_playback_scene(void* context) {
     FURI_LOG_I(TAG, "scene_on_enter_playback_scene");
@@ -116,6 +221,7 @@ void scene_on_enter_playback_scene(void* context) {
 
     // Configure the custom view
     view_set_draw_callback(playbackView->viewData, playback_view_draw_callback);
+    view_set_input_callback(playbackView->viewData, playback_view_input_callback);
     view_set_context(playbackView->viewData, context);
 
     FURI_LOG_I(TAG, "setting view model");

@@ -48,12 +48,12 @@ static void volume_option_change(VariableItem* item) {
 }
 
 static const LightColor color_option_values[] = {
-    LIGHT_COLOR_RED,
+    LIGHT_COLOR_ALL,
     LIGHT_COLOR_GREEN,
     LIGHT_COLOR_BLUE,
-    LIGHT_COLOR_ALL,
+    LIGHT_COLOR_RED,
 };
-static const char* color_option_names[] = {"Red", "Green", "Blue", "All"};
+static const char* color_option_names[] = {"All", "Green", "Blue", "Red"};
 static char* bpmStr;
 
 #define MIN_BPM 5
@@ -74,6 +74,16 @@ static void color_option_change(VariableItem* item) {
     uint8_t index = variable_item_get_current_value_index(item);
     variable_item_set_current_value_text(item, color_option_names[index]);
     ((struct ToneData_t*)app->additionalData)->lightColor = color_option_values[index];
+}
+
+static uint8_t color_option_index(LightColor lightColor) {
+    for(uint8_t i = 0; i < COUNT_OF(color_option_values); i++) {
+        if(color_option_values[i] == lightColor) {
+            return i;
+        }
+    }
+
+    return 0;
 }
 
 /** resets the menu, gives it content, callbacks and selection enums */
@@ -150,10 +160,9 @@ void scene_on_enter_settings_scene(void* context) {
         COUNT_OF(color_option_values),
         color_option_change,
         app);
-    variable_item_set_current_value_index(
-        item, ((struct ToneData_t*)app->additionalData)->lightColor);
-    variable_item_set_current_value_text(
-        item, color_option_names[((struct ToneData_t*)app->additionalData)->lightColor]);
+    uint8_t colorIndex = color_option_index(((struct ToneData_t*)app->additionalData)->lightColor);
+    variable_item_set_current_value_index(item, colorIndex);
+    variable_item_set_current_value_text(item, color_option_names[colorIndex]);
 
     view_dispatcher_switch_to_view(app->view_dispatcher, ToneGenAppView_VariableItemList);
 }

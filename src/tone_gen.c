@@ -13,14 +13,12 @@
 #include "scenes/starting_scene.h"
 #include "scenes/playback_scene.h"
 #include "scenes/settings_scene.h"
-#include "scenes/instructions_scene.h"
 
 /** collection of all scene on_enter handlers - in the same order as their enum */
 void (*const scene_on_enter_handlers[])(void*) = {
     scene_on_enter_starting_scene,
     scene_on_enter_playback_scene,
     scene_on_enter_settings_scene,
-    scene_on_enter_instructions_scene,
 };
 
 /** collection of all scene on event handlers - in the same order as their enum */
@@ -28,7 +26,6 @@ bool (*const scene_on_event_handlers[])(void*, SceneManagerEvent) = {
     scene_on_event_starting_scene,
     scene_on_event_playback_scene,
     scene_on_event_settings_scene,
-    scene_on_event_instructions_scene,
 };
 
 /** collection of all scene on exit handlers - in the same order as their enum */
@@ -36,7 +33,6 @@ void (*const scene_on_exit_handlers[])(void*) = {
     scene_on_exit_starting_scene,
     scene_on_exit_playback_scene,
     scene_on_exit_settings_scene,
-    scene_on_exit_instructions_scene,
 };
 
 const SceneManagerHandlers scene_event_handlers = {
@@ -62,11 +58,6 @@ int setupViews(struct AppContext_t** appContext) {
     playbackView->viewData = view_alloc();
     playbackView->viewId = ToneGenAppView_PlaybackView;
     playbackView->type = VIEW;
-
-    struct View_t* blankView = malloc(sizeof(struct View_t));
-    blankView->viewData = view_alloc();
-    blankView->viewId = ToneGenAppView_BlankView;
-    blankView->type = VIEW;
 
     FURI_LOG_I(TAG, "creating var-item-list view");
     struct View_t* variableItemListView = malloc(sizeof(struct View_t));
@@ -100,12 +91,6 @@ int setupViews(struct AppContext_t** appContext) {
     result = addViewToAppContext(appContext, playbackView);
     if(result != APP_CONTEXT_OK) {
         FURI_LOG_E(TAG, "There was a problem adding the view %d!", playbackView->viewId);
-        return -1;
-    }
-
-    result = addViewToAppContext(appContext, blankView);
-    if(result != APP_CONTEXT_OK) {
-        FURI_LOG_E(TAG, "There was a problem adding the view %d!", blankView->viewId);
         return -1;
     }
 
