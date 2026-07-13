@@ -13,7 +13,6 @@
 #include "scenes/starting_scene.h"
 #include "scenes/playback_scene.h"
 #include "scenes/settings_scene.h"
-#include "scenes/light_settings_scene.h"
 #include "scenes/instructions_scene.h"
 
 /** collection of all scene on_enter handlers - in the same order as their enum */
@@ -21,7 +20,6 @@ void (*const scene_on_enter_handlers[])(void*) = {
     scene_on_enter_starting_scene,
     scene_on_enter_playback_scene,
     scene_on_enter_settings_scene,
-    scene_on_enter_light_settings_scene,
     scene_on_enter_instructions_scene,
 };
 
@@ -30,7 +28,6 @@ bool (*const scene_on_event_handlers[])(void*, SceneManagerEvent) = {
     scene_on_event_starting_scene,
     scene_on_event_playback_scene,
     scene_on_event_settings_scene,
-    scene_on_event_light_settings_scene,
     scene_on_event_instructions_scene,
 };
 
@@ -39,7 +36,6 @@ void (*const scene_on_exit_handlers[])(void*) = {
     scene_on_exit_starting_scene,
     scene_on_exit_playback_scene,
     scene_on_exit_settings_scene,
-    scene_on_exit_light_settings_scene,
     scene_on_exit_instructions_scene,
 };
 
