@@ -1,5 +1,6 @@
 #include <gui/canvas.h>
 #include <gui/modules/menu.h>
+#include <gui/modules/number_input.h>
 #include <gui/modules/submenu.h>
 #include <gui/modules/variable_item_list.h>
 
@@ -81,6 +82,11 @@ int setupViews(struct AppContext_t** appContext) {
     variableItemListView->type = VARIABLE_ITEM_LIST;
     FURI_LOG_I(TAG, "moving on");
 
+    struct View_t* numberInputView = malloc(sizeof(struct View_t));
+    numberInputView->viewData = number_input_alloc();
+    numberInputView->viewId = ToneGenAppView_NumberInput;
+    numberInputView->type = NUMBER_INPUT;
+
     // Add views to the app context to be managed there
     FURI_LOG_I(TAG, "Adding views to app context");
     AppContextStatus result = addViewToAppContext(appContext, sharedMenuView);
@@ -114,6 +120,13 @@ int setupViews(struct AppContext_t** appContext) {
         return -1;
     }
 
+    FURI_LOG_I(TAG, "Adding number input view");
+    result = addViewToAppContext(appContext, numberInputView);
+    if(result != APP_CONTEXT_OK) {
+        FURI_LOG_E(TAG, "There was a problem adding the view %d!", numberInputView->viewId);
+        return -1;
+    }
+
     // On the playback view, ensure we only allocate for the model once
     FURI_LOG_I(TAG, "allocating view model for playback");
     view_allocate_model(playbackView->viewData, ViewModelTypeLockFree, sizeof(struct ToneData_t));
@@ -136,6 +149,10 @@ int32_t tone_gen_app(void* p) {
         ((struct ToneData_t*)appContext->additionalData)->frequency = 440;
         ((struct ToneData_t*)appContext->additionalData)->waveType = SINE;
         ((struct ToneData_t*)appContext->additionalData)->volume = 1.0f;
+        ((struct ToneData_t*)appContext->additionalData)->bpm = 80;
+        ((struct ToneData_t*)appContext->additionalData)->lightColor = LIGHT_COLOR_ALL;
+        ((struct ToneData_t*)appContext->additionalData)->ledState = false;
+        ((struct ToneData_t*)appContext->additionalData)->lightTimer = NULL;
 
         result = setupViews(&appContext);
         if(result == 0) {

@@ -58,6 +58,8 @@ void scene_on_enter_settings_scene(void* context) {
 
     // Set the currently active view
     variable_item_list_reset(variableItemListView->viewData);
+    variable_item_list_set_enter_callback(
+        variableItemListView->viewData, menu_callback_settings_scene, app);
 
     FURI_LOG_D(TAG, "Adding options for settings");
     // Wave type setting

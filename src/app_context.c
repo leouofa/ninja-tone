@@ -1,4 +1,5 @@
 #include <gui/modules/menu.h>
+#include <gui/modules/number_input.h>
 #include <gui/modules/popup.h>
 #include <gui/modules/submenu.h>
 #include <gui/modules/variable_item_list.h>
@@ -84,6 +85,10 @@ AppContextStatus addViewToAppContext(struct AppContext_t** context, struct View_
             view->viewId,
             variable_item_list_get_view(view->viewData));
         break;
+    case NUMBER_INPUT:
+        view_dispatcher_add_view(
+            (*context)->view_dispatcher, view->viewId, number_input_get_view(view->viewData));
+        break;
     case POPUP:
         view_dispatcher_add_view(
             (*context)->view_dispatcher, view->viewId, popup_get_view(view->viewData));
@@ -111,6 +116,9 @@ AppContextStatus freeAppContextViews(struct AppContext_t** context) {
                 break;
             case VARIABLE_ITEM_LIST:
                 variable_item_list_free(view->viewData);
+                break;
+            case NUMBER_INPUT:
+                number_input_free(view->viewData);
                 break;
             case POPUP:
                 popup_free(view->viewData);
