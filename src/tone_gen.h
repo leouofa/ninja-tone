@@ -11,7 +11,6 @@ typedef enum {
     ToneGenAppScene_Starting,
     ToneGenAppScene_Playback,
     ToneGenAppScene_Settings,
-    ToneGenAppScene_LightSettings,
     ToneGenAppScene_Instructions,
     ToneGenAppScene_count
 } ToneGenAppScene;

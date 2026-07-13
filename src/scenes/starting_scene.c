@@ -12,8 +12,7 @@
 /** indices for menu items */
 typedef enum {
     ToneGenAppMenuSelection_Play,
-    ToneGenAppMenuSelection_Adjust,
-    ToneGenAppMenuSelection_LightSettings,
+    ToneGenAppMenuSelection_Settings,
     ToneGenAppMenuSelection_Instructions
 } ToneGenAppMenuSelection;
 
@@ -26,12 +25,8 @@ void menu_callback_starting_scene(void* context, uint32_t index) {
     case ToneGenAppMenuSelection_Play:
         scene_manager_handle_custom_event(app->scene_manager, ToneGenAppMenuSelection_Play);
         break;
-    case ToneGenAppMenuSelection_Adjust:
-        scene_manager_handle_custom_event(app->scene_manager, ToneGenAppMenuSelection_Adjust);
-        break;
-    case ToneGenAppMenuSelection_LightSettings:
-        scene_manager_handle_custom_event(
-            app->scene_manager, ToneGenAppMenuSelection_LightSettings);
+    case ToneGenAppMenuSelection_Settings:
+        scene_manager_handle_custom_event(app->scene_manager, ToneGenAppMenuSelection_Settings);
         break;
     case ToneGenAppMenuSelection_Instructions:
         scene_manager_handle_custom_event(
@@ -62,16 +57,9 @@ void scene_on_enter_starting_scene(void* context) {
         app);
     menu_add_item(
         menuView->viewData,
-        "Tone Settings",
+        "Settings",
         &A_settings_button,
-        ToneGenAppMenuSelection_Adjust,
-        menu_callback_starting_scene,
-        app);
-    menu_add_item(
-        menuView->viewData,
-        "Light Settings",
-        &A_settings_button,
-        ToneGenAppMenuSelection_LightSettings,
+        ToneGenAppMenuSelection_Settings,
         menu_callback_starting_scene,
         app);
     menu_add_item(
@@ -97,12 +85,8 @@ bool scene_on_event_starting_scene(void* context, SceneManagerEvent event) {
             scene_manager_next_scene(app->scene_manager, ToneGenAppScene_Playback);
             consumed = true;
             break;
-        case ToneGenAppMenuSelection_Adjust:
+        case ToneGenAppMenuSelection_Settings:
             scene_manager_next_scene(app->scene_manager, ToneGenAppScene_Settings);
-            consumed = true;
-            break;
-        case ToneGenAppMenuSelection_LightSettings:
-            scene_manager_next_scene(app->scene_manager, ToneGenAppScene_LightSettings);
             consumed = true;
             break;
         case ToneGenAppMenuSelection_Instructions:

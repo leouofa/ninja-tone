@@ -47,6 +47,35 @@ static void volume_option_change(VariableItem* item) {
     variable_item_set_current_value_text(item, volumeStr);
 }
 
+static const LightColor color_option_values[] = {
+    LIGHT_COLOR_RED,
+    LIGHT_COLOR_GREEN,
+    LIGHT_COLOR_BLUE,
+    LIGHT_COLOR_ALL,
+};
+static const char* color_option_names[] = {"Red", "Green", "Blue", "All"};
+static char* bpmStr;
+
+#define MIN_BPM 5
+#define MAX_BPM 200
+#define BPM_STEPS 5
+#define INDEX_TO_BPM(index) (uint8_t)((index * BPM_STEPS) + MIN_BPM)
+#define BPM_TO_INDEX(bpm) (uint8_t)((bpm - MIN_BPM) / BPM_STEPS)
+static void bpm_option_change(VariableItem* item) {
+    struct AppContext_t* app = variable_item_get_context(item);
+    uint8_t index = variable_item_get_current_value_index(item);
+    ((struct ToneData_t*)app->additionalData)->bpm = INDEX_TO_BPM(index);
+    snprintf(bpmStr, 8, "%u", ((struct ToneData_t*)app->additionalData)->bpm);
+    variable_item_set_current_value_text(item, bpmStr);
+}
+
+static void color_option_change(VariableItem* item) {
+    struct AppContext_t* app = variable_item_get_context(item);
+    uint8_t index = variable_item_get_current_value_index(item);
+    variable_item_set_current_value_text(item, color_option_names[index]);
+    ((struct ToneData_t*)app->additionalData)->lightColor = color_option_values[index];
+}
+
 /** resets the menu, gives it content, callbacks and selection enums */
 void scene_on_enter_settings_scene(void* context) {
     FURI_LOG_I(TAG, "scene_on_enter_settings_scene");
@@ -102,6 +131,30 @@ void scene_on_enter_settings_scene(void* context) {
         ((uint8_t)(((struct ToneData_t*)app->additionalData)->volume * 100.0f)));
     variable_item_set_current_value_text(item, volumeStr);
 
+    // Light settings
+    item = variable_item_list_add(
+        variableItemListView->viewData,
+        "BPM",
+        BPM_TO_INDEX(MAX_BPM) + 1,
+        bpm_option_change,
+        app);
+    variable_item_set_current_value_index(
+        item, BPM_TO_INDEX(((struct ToneData_t*)app->additionalData)->bpm));
+    bpmStr = calloc(8, sizeof(char));
+    snprintf(bpmStr, 8, "%u", ((struct ToneData_t*)app->additionalData)->bpm);
+    variable_item_set_current_value_text(item, bpmStr);
+
+    item = variable_item_list_add(
+        variableItemListView->viewData,
+        "Colors",
+        COUNT_OF(color_option_values),
+        color_option_change,
+        app);
+    variable_item_set_current_value_index(
+        item, ((struct ToneData_t*)app->additionalData)->lightColor);
+    variable_item_set_current_value_text(
+        item, color_option_names[((struct ToneData_t*)app->additionalData)->lightColor]);
+
     view_dispatcher_switch_to_view(app->view_dispatcher, ToneGenAppView_VariableItemList);
 }
 
@@ -118,4 +171,8 @@ void scene_on_exit_settings_scene(void* context) {
     UNUSED(context);
     free(frequencyStr);
     free(volumeStr);
+    free(bpmStr);
+    frequencyStr = NULL;
+    volumeStr = NULL;
+    bpmStr = NULL;
 }
